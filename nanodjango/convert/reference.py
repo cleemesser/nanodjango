@@ -158,6 +158,25 @@ class ReferenceVisitor(ast.NodeVisitor):
         for stmt in node.body:
             self.visit(stmt)
 
+    def _add_target_to_scope(self, target: ast.AST) -> None:
+        """Add a assignment/loop target (possibly a tuple) to the current scope."""
+        if isinstance(target, ast.Name):
+            self.current_scope.add(target.id)
+        elif isinstance(target, (ast.Tuple, ast.List)):
+            for elt in target.elts:
+                self._add_target_to_scope(elt)
+
+    def visit_For(self, node: ast.For | ast.AsyncFor):
+        """For loop - add loop variable to local scope"""
+        self.visit(node.iter)
+        self._add_target_to_scope(node.target)
+        for stmt in node.body:
+            self.visit(stmt)
+        for stmt in node.orelse:
+            self.visit(stmt)
+
+    visit_AsyncFor = visit_For
+
     def visit_Import(self, node: ast.Import | ast.ImportFrom):
         for alias in node.names:
             if alias.asname:

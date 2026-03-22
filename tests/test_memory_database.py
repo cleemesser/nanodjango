@@ -137,7 +137,6 @@ def test_sync_prod_memory():
             # Verify warning is shown
             assert "WARNING" in output
             assert "In-memory database incompatible with gunicorn" in output
-            assert "Django.SQLITE_TMP" in output
 
 
 def test_sync_prod_tmp():

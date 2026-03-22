@@ -14,7 +14,7 @@ help:
 
 # Auto-rebuild docs with sphinx-autobuild
 nd:
-	sphinx-autobuild -M htmldir "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+	sphinx-autobuild --fresh-env "$(SOURCEDIR)" "$(BUILDDIR)/html" $(SPHINXOPTS) $(O)
 
 .PHONY: help Makefile nd
 

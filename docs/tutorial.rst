@@ -220,3 +220,17 @@ many cases it should run straight away:
     ./manage.py runserver 0.0.0.0:8000
 
 For full details on how to use nanodjango's ``convert`` command, see :doc:`convert`.
+
+
+Share on the Playground
+=======================
+
+You can share your script on the `nanodjango.dev <https://nanodjango.dev>`_ playground
+with a single command:
+
+.. code-block:: bash
+
+    nanodjango share counter.py
+
+This will prompt you to log in if needed, then upload your script and print the live URL.
+See :ref:`playground` in the usage guide for the full set of options.

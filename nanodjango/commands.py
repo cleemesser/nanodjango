@@ -8,6 +8,7 @@ import click
 
 from .app import Django
 from .hookspecs import get_contrib_plugins
+from .play import Api, ApiError
 
 
 def load_module(module_name: str, path: str | Path):
@@ -196,6 +197,210 @@ def plugins():
 
     if count == 0:
         click.echo("None")
+
+
+@click.group()
+def play() -> None:
+    """
+    nanodjango.dev playground
+    """
+
+
+@play.command("login")
+def play_login() -> None:
+    """
+    Log in to the nanodjango playground
+    """
+    api = Api()
+    if api.is_authenticated:
+        click.echo(
+            f"Already logged in as {api.username}."
+            " Use 'play logout' first to switch accounts."
+        )
+        return
+    try:
+        api.login()
+    except ApiError as e:
+        raise click.ClickException(str(e))
+
+
+@play.command("logout")
+def play_logout() -> None:
+    """
+    Log out from the nanodjango playground
+    """
+    api = Api()
+    try:
+        api.logout()
+    except ApiError as e:
+        raise click.ClickException(str(e))
+    click.echo("Logged out.")
+
+
+@play.command("share")
+@click.argument("source", type=click.Path(exists=True))
+@click.option("--name", default=None, help="Script name (default: filename stem)")
+@click.option("--title", default=None, help="Title shown on playground (default: name)")
+@click.option("--description", default="", help="Short description")
+@click.option(
+    "--requirements",
+    "-r",
+    default=None,
+    type=click.Path(),
+    help="Requirements file (requirements.txt)",
+)
+@click.option(
+    "--package",
+    multiple=True,
+    help="Package to add to requirements (repeatable)",
+)
+@click.option(
+    "--env",
+    multiple=True,
+    help="Env var declaration: VARNAME or VARNAME:Description (repeatable)",
+)
+@click.option(
+    "--force", is_flag=True, default=False, help="Overwrite if script already exists"
+)
+def play_share(
+    source: str,
+    name: str | None,
+    title: str | None,
+    description: str,
+    requirements: str | None,
+    package: tuple[str, ...],
+    env: tuple[str, ...],
+    force: bool,
+) -> None:
+    """
+    Share a script on the nanodjango playground
+    """
+    api = Api()
+
+    source_path = Path(source)
+    if name is None:
+        name = source_path.stem
+    if title is None:
+        title = name
+
+    code = source_path.read_text()
+
+    # Build packages list (newline-separated)
+    pkg_lines = []
+    if requirements is not None:
+        req_path = Path(requirements)
+        if not req_path.exists():
+            raise click.ClickException(f"Requirements file not found: {requirements}")
+        pkg_lines.append(req_path.read_text().rstrip())
+    pkg_lines.extend(package)
+    packages = "\n".join(pkg_lines)
+
+    # Build environment as JSON dict {var_name: description_or_null}
+    environment = {}
+    for entry in env:
+        if ":" in entry:
+            varname, desc = entry.split(":", 1)
+            environment[varname.strip()] = desc.strip()
+        else:
+            environment[entry.strip()] = None
+
+    try:
+        url = api.push(
+            name,
+            code,
+            title=title,
+            description=description,
+            packages=packages,
+            environment=environment,
+            force=force,
+        )
+        click.echo(f"Shared at {url}")
+    except ApiError as e:
+        raise click.ClickException(str(e))
+
+
+@play.command("pull")
+@click.argument("script")
+@click.argument("target", required=False, default=None)
+@click.option(
+    "--force", is_flag=True, default=False, help="Overwrite target if it exists"
+)
+def play_pull(script: str, target: str | None, force: bool) -> None:
+    """
+    Pull a script from the nanodjango playground
+    """
+    api = Api()
+
+    if "/" in script:
+        user, name = script.split("/", 1)
+    else:
+        user, name = None, script
+
+    target_path = Path(target) if target else Path(f"{name}.py")
+    if target_path.exists() and not force:
+        raise click.ClickException(
+            f"{target_path} already exists. Use --force to overwrite."
+        )
+
+    try:
+        code = api.pull(name, user=user)
+    except ApiError as e:
+        raise click.ClickException(str(e))
+
+    target_path.write_text(code)
+    click.echo(f"Saved to {target_path}")
+
+
+@play.command("list")
+@click.argument("user", required=False, default=None)
+def play_list(user: str | None) -> None:
+    """
+    List scripts on the nanodjango playground
+    """
+    api = Api()
+
+    try:
+        scripts = api.list(user=user)
+        display_user = user or api.username
+    except ApiError as e:
+        raise click.ClickException(str(e))
+    if not scripts:
+        click.echo(f"No scripts found for {display_user}.")
+        return
+
+    col_name = max(max(len(s.get("name", "")) for s in scripts), 4)
+    col_title = max(max(len(s.get("title", "")) for s in scripts), 5)
+    col_vis = 10
+
+    header = f"{'NAME':<{col_name}}  {'TITLE':<{col_title}}  {'VISIBILITY':<{col_vis}}  MODIFIED"
+    click.echo(header)
+    click.echo("-" * len(header))
+    for s in scripts:
+        name = s.get("name", "")
+        title = s.get("title", "")
+        visibility = s.get("visibility", s.get("public", ""))
+        if isinstance(visibility, bool):
+            visibility = "public" if visibility else "private"
+        modified = s.get("modified", s.get("updated_at", ""))[:19]
+        click.echo(
+            f"{name:<{col_name}}  {title:<{col_title}}  {visibility:<{col_vis}}  {modified}"
+        )
+
+
+@play.command("ls")
+@click.argument("user", required=False, default=None)
+@click.pass_context
+def play_ls(ctx: click.Context, user: str | None) -> None:
+    """
+    List scripts on the nanodjango playground (alias for 'list')
+    """
+    ctx.invoke(play_list, user=user)
+
+
+# Register play group and top-level aliases
+cli.add_command(play)
+cli.add_command(play_share, "share")
+cli.add_command(play_pull, "pull")
 
 
 def invoke():

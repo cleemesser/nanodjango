@@ -27,5 +27,6 @@ Perfect for experiments, prototypes, tutorials, and small applications.
     internal_api
     howto_api
     troubleshooting
+    playground/index
     contributing
     changelog

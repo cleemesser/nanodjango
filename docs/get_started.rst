@@ -79,4 +79,11 @@ or automatically convert it to a full Django app:
     nanodjango counter.py convert /path/to/site --name=myproject
 
 
+or share it on the `nanodjango.dev <https://nanodjango.dev>`_ playground:
+
+.. code-block:: bash
+
+    nanodjango share counter.py
+
+
 To learn more about how this works, take a look at the :doc:`tutorial`.

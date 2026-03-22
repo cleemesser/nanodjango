@@ -122,13 +122,17 @@ def test_sync_prod_memory():
         )
 
         with nanodjango_process("serve", str(app_file), "127.0.0.1:8052") as handle:
-            # Wait a moment for startup output
-            time.sleep(2)
-
-            # Read startup output
+            # Poll for the warning line (mirrors how runserver() works)
             os.set_blocking(handle.stdout.fileno(), False)
             os.set_blocking(handle.stderr.fileno(), False)
-            output = handle.stdout.read() + handle.stderr.read()
+            deadline = time.time() + 30
+            output = ""
+            while time.time() < deadline:
+                output += handle.stdout.readline()
+                output += handle.stderr.readline()
+                if "In-memory database incompatible with gunicorn" in output:
+                    break
+                time.sleep(0.1)
 
             # Verify warning is shown
             assert "WARNING" in output

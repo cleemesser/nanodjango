@@ -2,6 +2,20 @@
 Changelog
 =========
 
+0.16.0 - 2026-03-22
+-------------------
+
+Features:
+
+* Add nanodjango.dev playground integration - ``nanodjango share``, ``nanodjango pull``
+  and ``nanodjango play`` commands.
+
+
+Docs:
+
+* Add section for the [nanodjango playground](https://nanodjango.dev/play/)
+
+
 0.15.2 - 2026-03-18
 -------------------
 

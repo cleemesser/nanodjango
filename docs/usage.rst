@@ -241,3 +241,135 @@ nanodjango uses the filename as the app name - eg:
 .. code-block:: bash
 
     nanodjango manage counter.py makemigrations counter
+
+
+.. _playground:
+
+Sharing on the Playground
+=========================
+
+You can share your nanodjango scripts on the `nanodjango.dev <https://nanodjango.dev>`_
+playground. Scripts run live in the browser - anyone with the link can try them out.
+
+You will need to create an account at nanodjango.dev before you can use these commands.
+
+
+Sharing a script
+----------------
+
+Upload a script to the playground:
+
+.. code-block:: bash
+
+    nanodjango share counter.py
+
+This is an alias for ``nanodjango play share``. On success it prints the live URL.
+
+If you already have a script with that name in the playground, pass ``--force`` to
+overwrite it:
+
+.. code-block:: bash
+
+    nanodjango share counter.py --force
+
+Options:
+
+``--name=TEXT``
+  Script name used in the URL (default: filename stem, eg ``counter``).
+
+``--title=TEXT``
+  Human-readable title shown on the playground (default: name).
+
+``--description=TEXT``
+  Short description shown on the playground.
+
+``-r / --requirements=PATH``
+  Path to a ``requirements.txt``-style file listing extra packages to install.
+
+``--package=TEXT``
+  Add a single package to the requirements (repeatable):
+
+  .. code-block:: bash
+
+      nanodjango share counter.py --package requests --package pillow
+
+``--env=TEXT``
+  Declare an environment variable the script expects (repeatable). Use
+  ``VARNAME`` for a bare declaration, or ``VARNAME:Description`` to include a
+  human-readable description shown to users when they run the script:
+
+  .. code-block:: bash
+
+      nanodjango share counter.py --env SECRET_KEY --env "API_URL:Base URL of the upstream API"
+
+  The actual values are entered by each user in their browser and are never
+  stored on the server.
+
+``--force``
+  Overwrite the script if it already exists.
+
+
+Pulling a script
+----------------
+
+Download a script from the playground:
+
+.. code-block:: bash
+
+    # Pull your script (saves as counter.py)
+    nanodjango pull counter
+
+    # Pull your script to another filename
+    nanodjango pull counter counter_example.py
+
+    # Pull someone else's script
+    nanodjango pull alice/counter
+
+This is an alias for ``nanodjango play pull``. The script is saved to ``{name}.py`` in
+the current directory by default.
+
+Options:
+
+``TARGET``
+  Optional second argument - path to write the file to (default: ``{name}.py``).
+
+``--force``
+  Overwrite the target file if it already exists.
+
+
+Listing scripts
+---------------
+
+List all scripts for the authenticated user:
+
+.. code-block:: bash
+
+    nanodjango play list
+    nanodjango play ls
+
+List scripts for another user:
+
+.. code-block:: bash
+
+    nanodjango play list alice
+
+
+Authentication
+--------------
+
+Log in with the device flow (opens a browser tab to approve access):
+
+.. code-block:: bash
+
+    nanodjango play login
+
+Log out and revoke the stored API key:
+
+.. code-block:: bash
+
+    nanodjango play logout
+
+Credentials are stored in ``~/.config/nanodjango/credentials.json``.
+
+``share`` and ``pull`` will trigger the login flow automatically if you are not already
+logged in, so you rarely need to run ``login`` explicitly.

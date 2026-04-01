@@ -634,11 +634,13 @@ class Converter:
             return
 
         self.app_has_urls = True
+        ninja_import = "from ninja import NinjaAPI" if self.api_views else ""
+        ninja_inst = "api = NinjaAPI()" if self.api_views else ""
         self.write_file(
             self.app_path / "api.py",
-            "from ninja import NinjaAPI",
+            ninja_import,
             resolver.gen_src(),
-            "api = NinjaAPI()",
+            ninja_inst,
             "\n".join([api_view.src for api_view in self.api_views]),
             "\n".join(extra_src),
         )
